@@ -1,6 +1,6 @@
 use rand::{CryptoRng, RngCore};
 
-use crate::{keys::SpendAuthorizingKey, primitives::redpallas};
+use crate::{keys::SpendAuthorizingKey, primitives::redpallas::{self, SpendAuth}};
 
 impl super::Action {
     /// Signs the Orchard spend with the given spend authorizing key.
@@ -28,6 +28,39 @@ impl super::Action {
         } else {
             Err(SignerError::WrongSpendAuthorizingKey)
         }
+    }
+
+    /// Applies an externally-computed spend authorization signature.
+    ///
+    /// This is used for external signing where the signature is computed outside
+    /// of this crate (e.g., on a hardware wallet, secure enclave, or constrained device
+    /// like Apple Watch).
+    ///
+    /// The signature should be produced by signing the `sighash` with the randomized
+    /// private spending key `rsk = ask * alpha`, where `alpha` is the spend authorization
+    /// randomizer from this action's spend.
+    ///
+    /// It is the caller's responsibility to ensure the signature is valid for the
+    /// transaction's sighash and was produced using the correct randomizer.
+    pub fn apply_external_signature(
+        &mut self,
+        signature: redpallas::Signature<SpendAuth>,
+    ) {
+        self.spend.spend_auth_sig = Some(signature);
+    }
+
+    /// Applies an externally-computed spend authorization signature from raw bytes.
+    ///
+    /// This is a convenience method that accepts a 64-byte signature directly,
+    /// useful when receiving signatures from external devices that produce raw bytes.
+    ///
+    /// Returns an error if the signature bytes are not exactly 64 bytes.
+    pub fn apply_external_signature_bytes(
+        &mut self,
+        signature_bytes: [u8; 64],
+    ) {
+        let signature = redpallas::Signature::<SpendAuth>::from(signature_bytes);
+        self.spend.spend_auth_sig = Some(signature);
     }
 }
 
