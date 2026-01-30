@@ -125,6 +125,11 @@ impl SpendAuthorizingKey {
         to_scalar(PrfExpand::ORCHARD_ASK.with(&sk.0))
     }
 
+    /// Returns the raw bytes of the spend authorizing key.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        <[u8; 32]>::from(&self.0)
+    }
+
     /// Randomizes this spend authorizing key with the given `randomizer`.
     ///
     /// The resulting key can be used to actually sign a spend.
